@@ -1,5 +1,5 @@
 import { EVMResults, Stack, Memory, Storage } from "./components";
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, } from "react";
 import { Analytics } from "@vercel/analytics/react";
 
 import "./App.css";
@@ -29,6 +29,7 @@ export function App() {
 
   const [puzzleId, setPuzzleId] = useState(1);
   const [puzzleDesc, setPuzzleDesc] = useState<string>();
+  const [puzzleRefLink, setPuzzleRefLink] = useState<string>();
   const [puzzleAnswer, setPuzzleAnswer] = useState<vEVMState>();
   const [puzzleStatus, setPuzzleStatus] = useState<boolean>();
 
@@ -40,10 +41,8 @@ export function App() {
       case 1:
         setPuzzleDesc(
           `Ethereum runs on the EVM, a virtual CPU.\n\n` +
-            `The program the CPU executes is representated in bytecode, represented as a string of hex.\n` +
-            `Every 2 hex characters is 1 byte, and  each byte is a command or data.\n\n` +
-            `This is what you see when you examine a compiled contract on etherscan or remix,\n` +
-            `and it is all the EVM actually knows. Everything else is abstraction and tooling.\n\n` +
+            `The CPU executes a program representated in bytecode, shows asa  string of hex. Every 2 hex characters is 1 byte, and each byte is a command or data.\n\n` +
+            `This is what you see when you examine a compiled contract on etherscan or remix, and it is all the EVM actually knows. Everything else is abstraction and tooling.\n\n` +
             `eg: 608060405234801561001057600080fd5b50613a46806100206000396000f3fe608060405234801561001057...`
         );
         setPuzzleAnswer({
@@ -58,14 +57,14 @@ export function App() {
           logs: [],
           output: "",
         });
+        setPuzzleRefLink(undefined);
         setActivePuzzle(1);
 
         return;
       case 2:
         setPuzzleDesc(
-          `The Stack is temporary memory used by the EVM. 1024 slots of 32 bytes each.\n\n` +
-            `It's called a stack because you pile up values. The last value you push goes on top,\n` +
-            `and values are retrieved in order from the top when you read from the stack.\n\n` +
+          `The Stack is temporary memory used by the EVM. It provides 1024 slots of 32 bytes each.\n\n` +
+            `It's called a stack because you pile up values. The last value you push to the stack goes on top, and values are retrieved in order from the top to bottom when you read from the stack.\n\n` +
             `The stack is used for all operations, including math, memory, and storage.\n`
         );
         setPuzzleAnswer({
@@ -80,19 +79,17 @@ export function App() {
           logs: [],
           output: "",
         });
+        setPuzzleRefLink(undefined);
         setActivePuzzle(2);
 
         return;
       case 3:
         setPuzzleDesc(
-          `There are 32 variants of PUSH, corresponding to the size of the data you want to push.\n` +
-            `A PUSH of any size takes an entire 32 byte slot.\n` +
-            `The hex data you are pushing follows the opcode.\n\n` +
-            `To place 0xFF on the top of the stack, you could use the mneumonic\n` +
-            `PUSH1 0xFF\n` +
-            `which looks like this in bytecode: 0x60FF\n\n` +
-            `Place the hex value 0x10 on the stack. Use evm.codes for reference if needed.\n`
+          `There are 32 variants of PUSH, corresponding to the size of the data you want to push. A PUSH of any size takes an entire 32 byte slot. The hex data you are pushing follows the opcode.\n\n` +
+            `To place 0xFF on the top of the stack:\nPUSH1 0xFF\n\nwhich looks like this in bytecode:\n0x60FF\n\n` +
+            `Place the hex value 0x10 on the stack.`
         );
+        setPuzzleRefLink("www.evm.codes/#60?fork=shanghai");
         setPuzzleAnswer({
           code: "",
           data: "",
@@ -114,13 +111,10 @@ export function App() {
       case 4:
         setPuzzleDesc(
           `Aside from the Stack, the EVM allows to access as much Memory as you're willing to buy.\n\n` +
-            `Compilers place structure on this memory; Solidity defines the first 160bytes for you.\n` +
-            `We're operating on the raw EVM though, so you have direct access to all of it.\n\n` +
-            `This memory is not broken up into 32 bytes like the stack, but is instead continuous.\n` +
-            `You can access any location you want, with the proper opcodes.\n\n` +
-            `However, accessing a high location initialized all unused values below it to zero.\n` +
-            `This is called memory expansion, and can get very expensive.\n\n` +
-            `Some opcode, like RETURN, only operate on memory, so we're going to practice it next.`
+            `Compilers place structure on this memory; Solidity defines the first 160bytes for you. We're operating on the raw EVM though, so you have direct access to all of it.\n\n` +
+            `This memory is not broken up into 32 bytes like the stack, but is instead continuous. You can access any location you want, with the proper opcodes.\n\n` +
+            `However, accessing a location higher in memory initializes all unused values below it to zero. This is called memory expansion, and can get very expensive.\n\n` +
+            `Some opcode, like RETURN, only operate on memory, so we're going to practice Memory next.`
         );
         setPuzzleAnswer({
           code: "",
@@ -144,11 +138,8 @@ export function App() {
             `PUSH1 0xFF : 0x60FF\n` +
             `PUSH1 0xA0 : 0x60A0\n` +
             `MSTORE : 0x52\n\n` +
-            `Unlike PUSH, you need to specify where in memory to want the data.\n` +
-            `There are no data alignment constraints; you can place the data anywhere.\n` +
-            `However, MSTORE pushes 32 bytes.  We'll learn MSTORE8 later which pushes 1 byte.\n\n` +
-            `If you place the data higher in memory, unused skipped memory locations are fill with zero.\n` +
-            `Note that this Memory Expansion can get expensive in contracts.\n\n` +
+            `Unlike PUSH, you need to specify where in memory to want the data. There are no data alignment constraints; you can place the data anywhere. However, MSTORE pushes 32 bytes.  We'll learn MSTORE8 later which pushes 1 byte.\n\n` +
+            `If you place the data higher in memory, unused skipped memory locations are fill with zero. Note that this Memory Expansion can get expensive in contracts.\n\n` +
             `Place the hex value 0x10 on the stack, then move it to memory location 0x20.\n\n` +
             `You will notice some memory expansion in your answer.`
         );
@@ -168,13 +159,10 @@ export function App() {
         return;
       case 6:
         setPuzzleDesc(
-          `Storage is the core of the blockchain. It is the global harddrive that everyone can read.\n\n` +
-            `It's also very expensive; at current ETH prices, it's tens of thousands of dollars per MB.\n` +
-            `There are other options like IPFS, but for now, only store what you absolutely need onchain, \n` +
-            `and be clever about it if you can.\n\n` +
+          `Storage is the core of the blockchain. It is the global hard drive that everyone can read and write.\n\n` +
+            `It's also very expensive; at current ETH prices, it's tens of thousands of dollars per MB. There are other options like IPFS, but for now, only store what you absolutely need onchain, and be clever about it if you can.\n\n` +
             `The vEVM we're using emulates storage, so you wont incur any costs while solving the tutorial.\n\n` +
-            `You store values by specifying a storage slot as a 32 byte hex value, and then 32 byte value\n` +
-            `you want to store there.  You can then retrieve that value later by reading from the same slot.\n\n` +
+            `You store values by specifying a storage slot as a 32 byte hex value, and then 32 byte value you want to store there. You can then retrieve that value later by reading from the same slot.\n\n` +
             `You can also store values in the same slot, overwriting the previous value.\n`
         );
         setPuzzleAnswer({
